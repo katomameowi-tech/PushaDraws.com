@@ -1,0 +1,922 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PushaDraws.com</title>
+    <style>
+        /* --- БАЗОВЫЕ НАСТРОЙКИ И АНИМИРОВАННЫЙ ЭКО-ФОН --- */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+            user-select: none;
+            /* РЕТРО-КУРСОР ИЗ 2000-х (Пиксельная стрелочка Windows) */
+            cursor: url('https://cur.cursors-4u.net/windows/win-6/win548.cur'), default !important;
+        }
+
+        body {
+            min-height: 100vh;
+            /* ВАШ КРАСИВЫЙ ПОЛУПРОЗРАЧНЫЙ ФОН С СОХРАНЕНИЕМ АНИМАЦИИ ГРАДИЕНТА */
+            background: 
+                linear-gradient(135deg, rgba(11, 61, 27, 0.4) 0%, rgba(27, 94, 32, 0.4) 30%, rgba(76, 175, 80, 0.4) 60%, rgba(129, 199, 132, 0.4) 100%),
+                url('https://cdn.phototourl.com/free/2026-07-07-9666d025-f55d-48d2-8f83-03661ab3b49d.png') no-repeat center center fixed;
+            
+            background-size: 400% 400%, cover;
+            animation: gradientMove 25s ease infinite;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        @keyframes gradientMove {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* ПОЛУПРОЗРАЧНЫЕ лесные/эко пузыри на фоне */
+        .bubbles-layer {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            overflow: hidden;
+            z-index: 1;
+            pointer-events: none;
+        }
+        .bubble {
+            position: absolute;
+            bottom: -60px;
+            background: rgba(165, 242, 185, 0.15);
+            box-shadow: inset 0 2px 4px rgba(255,255,255,0.6), 0 2px 8px rgba(34,139,34,0.15);
+            border-radius: 50%;
+            animation: floatBubble infinite ease-in-out;
+            opacity: 0;
+        }
+        
+        @keyframes floatBubble {
+            0% { transform: translateY(0) translateX(0) scale(0.8); opacity: 0; }
+            10% { opacity: 0.35; }
+            50% { transform: translateY(-50vh) translateX(35px) scale(1.1); }
+            75% { transform: translateY(-75vh) translateX(-25px) scale(0.95); }
+            100% { transform: translateY(-115vh) translateX(15px) scale(1.3); opacity: 0; }
+        }
+
+        /* ЭФФЕКТ ВЫЛЕТАЮЩИХ ПУЗЫРЬКОВ ПРИ КЛИКЕ */
+        .click-bubble {
+            position: fixed;
+            background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.6) 0%, rgba(165, 242, 185, 0.35) 50%, rgba(76, 175, 80, 0.2) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 9999;
+            box-shadow: inset -2px -2px 6px rgba(0,0,0,0.03), 0 4px 8px rgba(46,125,50,0.1);
+            animation: popBubble 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+        }
+
+        @keyframes popBubble {
+            0% { transform: translate(-50%, -50%) translate(0, 0) scale(0.5); opacity: 1; }
+            100% { transform: translate(-50%, -50%) translate(var(--mx), var(--my)) scale(1.4); opacity: 0; }
+        }
+
+        /* --- ГЛАВНОЕ ОКНО ИНТЕРФЕЙСА (DREAM ECO OS) --- */
+        .os-window {
+            width: 100%;
+            max-width: 1120px;
+            background: rgba(230, 245, 235, 0.5);
+            backdrop-filter: blur(25px) saturate(150%);
+            -webkit-backdrop-filter: blur(25px) saturate(150%);
+            border: 1px solid rgba(255, 255, 255, 0.7);
+            border-radius: 16px;
+            box-shadow: 0 25px 60px rgba(10, 45, 20, 0.4), inset 0 1px 0 rgba(255,255,255,0.8);
+            z-index: 2;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        /* Шапка окна а-ля Windows Vista Green Aero */
+        .os-header {
+            background: linear-gradient(to bottom, rgba(255,255,255,0.9) 0%, rgba(230,250,235,0.6) 50%, rgba(195,235,205,0.8) 100%);
+            border-bottom: 1px solid rgba(135, 195, 150, 0.5);
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .window-title { font-size: 14px; font-weight: 600; color: #1b4d22; text-shadow: 0 1px 1px white; }
+        .window-btns { display: flex; gap: 6px; }
+        .win-btn { width: 12px; height: 12px; border-radius: 50%; border: 1px solid rgba(0,0,0,0.15); }
+        .btn-close { background: #ff5f56; } .btn-min { background: #ffbd2e; } .btn-max { background: #27c93f; }
+
+        /* Панель быстрого запуска с иконками 2000-х */
+        .toolbar {
+            background: rgba(225, 242, 230, 0.6);
+            border-bottom: 1px solid rgba(185, 215, 195, 0.6);
+            padding: 8px 20px;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+        .retro-icon {
+            font-size: 20px; width: 36px; height: 36px;
+            background: linear-gradient(135deg, rgba(255,255,255,0.85), rgba(215,245,225,0.55));
+            border: 1px solid rgba(255,255,255,0.7); border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.25);
+            box-shadow: 0 2px 4px rgba(10,50,20,0.1);
+        }
+        .retro-icon:hover { transform: scale(1.15) translateY(-2px); border-color: #4caf50; background: #fff; }
+        .retro-icon-error { border-color: #ffb3b3; color: #cc3333; }
+
+        .sound-widget { font-size: 13px; font-weight: 600; color: #1b4d22; display: flex; align-items: center; gap: 4px; }
+
+        /* --- РАБОЧАЯ ОБЛАСТЬ --- */
+        .workspace { display: flex; min-height: 600px; flex-direction: row; }
+        @media (max-width: 768px) { .workspace { flex-direction: column; } }
+
+        /* ЛЕВАЯ БОКОВАЯ ПАНЕЛЬ */
+        .sidebar {
+            width: 270px; padding: 20px;
+            background: linear-gradient(to right, rgba(255,255,255,0.4), rgba(235,248,240,0.2));
+            border-right: 1px solid rgba(185, 215, 195, 0.6);
+            display: flex; flex-direction: column; align-items: center; gap: 15px; flex-shrink: 0;
+        }
+        @media (max-width: 768px) { .sidebar { width: 100%; border-right: none; border-bottom: 1px solid rgba(185,215,195,0.6); } }
+
+        .avatar-box {
+            width: 140px; height: 140px; background: #fff url('https://cdn.phototourl.com/free/2026-07-07-b6225b0d-e6da-411b-b5a0-d94ab720a641.jpg') center center;
+            background-size: cover; border: 4px solid white; border-radius: 12px;
+            box-shadow: 0 6px 16px rgba(10,60,20,0.15), inset 0 2px 4px rgba(0,0,0,0.1);
+            position: relative; overflow: hidden;
+        }
+        .avatar-box::before {
+            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 50%;
+            background: linear-gradient(to bottom, rgba(255,255,255,0.5) 0%, rgba(255,255,255,0) 100%);
+        }
+
+        .profile-card {
+            width: 100%; background: rgba(255,255,255,0.5); border: 1px solid rgba(255,255,255,0.7);
+            border-radius: 10px; padding: 12px; box-shadow: inset 0 1px 2px rgba(0,0,0,0.02);
+        }
+        .profile-card h3 { color: #1b5e20; font-size: 16px; margin-bottom: 6px; text-align: center; }
+        .profile-card p { font-size: 12.5px; color: #37474f; display: flex; justify-content: space-between; border-bottom: 1px dashed rgba(0,0,0,0.08); padding-bottom: 3px; margin-bottom: 4px; }
+        .profile-card p span { font-weight: 600; color: #111; }
+
+        .pixel-badge {
+            width: 100%; font-family: 'Courier New', monospace; font-weight: bold; font-size: 12px;
+            padding: 5px; border-radius: 4px; text-align: center; border: 1px solid #a5d6a7; background: #e8f5e9; color: #2e7d32;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.4);
+        }
+
+        /* Виджет: Маскот */
+        .pet-widget { width: 100%; background: rgba(255,255,255,0.5); border: 1px solid rgba(255,255,255,0.7); border-radius: 10px; padding: 10px; text-align: center; position: relative; }
+        .pet-title { font-size: 10px; color: #546e7a; text-transform: uppercase; font-weight: bold; margin-bottom: 6px; }
+        
+        .pet-avatar-container {
+            width: 65px;
+            height: 65px;
+            margin: 0 auto 4px;
+            border-radius: 50%;
+            border: 2px solid #a5d6a7;
+            background: #fff;
+            overflow: hidden;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+            transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .pet-img { width: 100%; height: 100%; object-fit: cover; }
+        .pet-widget:hover .pet-avatar-container { transform: scale(1.2) rotate(-5deg); }
+        .pet-bubble { position: absolute; background: white; border: 1px solid #ccc; border-radius: 8px; padding: 4px 8px; font-size: 11px; top: -30px; left: 50%; transform: translateX(-50%); display: none; box-shadow: 0 4px 8px rgba(0,0,0,0.1); width: max-content; }
+        .pet-widget:hover .pet-bubble { display: block; }
+
+        /* --- ПРАВАЯ ИНТЕРАКТИВНАЯ ПАНЕЛЬ С ВКЛАДКАМИ --- */
+        .main-panel { flex-grow: 1; display: flex; flex-direction: column; }
+        
+        .tab-navigation { display: flex; background: rgba(205, 235, 215, 0.4); padding: 10px 15px 0; border-bottom: 1px solid rgba(175,210,185,0.6); gap: 5px; }
+        .tab-link {
+            padding: 10px 22px; font-size: 14px; font-weight: 600; color: #37474f;
+            background: linear-gradient(to bottom, rgba(250,255,250,0.7), rgba(215,235,220,0.5));
+            border: 1px solid rgba(175,210,185,0.6); border-bottom: none; border-radius: 10px 10px 0 0;
+            position: relative; transition: all 0.2s ease;
+        }
+        .tab-link::after { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 40%; background: linear-gradient(to bottom, rgba(255,255,255,0.5), transparent); }
+        .tab-link.active {
+            background: #fff; color: #1b5e20; font-weight: 700; border-color: rgba(145,190,155,0.8);
+            padding-bottom: 11px; margin-bottom: -1px; z-index: 3; box-shadow: inset 0 2px 0 #4caf50;
+        }
+
+        .tab-view { padding: 25px; display: none; flex-direction: column; gap: 18px; overflow-y: auto; max-height: 580px; }
+        .tab-view.active { display: flex; }
+
+        h2 { color: #1b5e20; font-size: 20px; font-weight: 700; border-bottom: 2px solid rgba(76,175,80,0.25); padding-bottom: 6px; text-shadow: 0 1px 0 white; }
+        h3.gallery-section-title { color: #2e7d32; font-size: 14px; font-weight: bold; margin-top: 10px; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .glass-box { background: rgba(255, 255, 255, 0.5); border: 1px solid rgba(255,255,255,0.7); border-radius: 12px; padding: 15px; box-shadow: inset 0 1px 0 white; }
+        
+        .banner-view {
+            width: 100%; height: 120px; background: linear-gradient(45deg, #2e7d32, #81c784); border-radius: 12px;
+            display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 22px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.2); position: relative; overflow: hidden; box-shadow: 0 4px 15px rgba(46,125,50,0.2);
+        }
+
+        /* Блок статуса и объявлений */
+        .notebook-box { background: #f7fbf7; border: 1px solid #c8d6c9; border-radius: 8px; padding: 15px; position: relative; }
+        .notebook-header { font-size: 11px; text-transform: uppercase; color: #758a77; font-weight: bold; margin-bottom: 6px; border-bottom: 1px dashed #c8d6c9; padding-bottom: 4px; }
+        .notebook-text { font-size: 13.5px; color: #2e3d30; line-height: 1.5; min-height: 45px; }
+        .notebook-nav { display: flex; justify-content: flex-end; gap: 10px; margin-top: 8px; }
+        .notebook-btn { background: #e8fee9; border: 1px solid #b2cbb3; padding: 2px 10px; font-size: 11px; font-weight: bold; border-radius: 4px; color: #2e7d32; }
+
+        /* Переключатель валюты */
+        .currency-toggle-box {
+            display: flex; gap: 10px; align-items: center; background: rgba(46,125,50,0.06); 
+            padding: 8px 12px; border-radius: 8px; border: 1px solid rgba(76,175,80,0.15); margin-bottom: 5px;
+        }
+        .currency-toggle-box span { font-size: 13px; font-weight: bold; color: #1b5e20; }
+        .currency-radio-label { display: flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 600; color: #333; }
+        .currency-radio-label input { transform: scale(1.1); }
+
+        /* Плашка Блока Оплаты */
+        .payment-section h3 { font-size: 15px; color: #1b5e20; margin-bottom: 8px; }
+        .payment-grid { display: flex; gap: 10px; }
+        @media (max-width: 480px) { .payment-grid { flex-direction: column; } }
+        .payment-card {
+            flex: 1; display: flex; align-items: center; gap: 10px; padding: 10px; border-radius: 8px;
+            border: 1px solid rgba(0,0,0,0.05); transition: all 0.2s ease;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.02); background: rgba(255,255,255,0.6);
+        }
+        .payment-card:hover { transform: translateY(-2px); box-shadow: 0 4px 10px rgba(10,50,20,0.12); background: white; }
+        .kaspi-card { border-left: 4px solid #f14635; }
+        .boosty-card { border-left: 4px solid #ff5900; }
+        .pay-ico { font-size: 22px; }
+        .pay-title { font-weight: bold; font-size: 13.5px; color: #222; }
+        .pay-subtitle { font-size: 11px; color: #666; margin-top: 1px; }
+
+        /* Плашка Blacklist */
+        .bl-panel { background: linear-gradient(135deg, rgba(255,230,230,0.8), rgba(255,205,205,0.6)); border: 1px solid #ffb3b3; border-radius: 12px; padding: 15px; margin-top: 10px;}
+        .bl-panel h4 { color: #c62828; margin-bottom: 6px; }
+        .bl-panel ul { padding-left: 18px; font-size: 13.5px; color: #5c2525; line-height: 1.6; }
+
+        /* Калькулятор прайса */
+        .calc-grid { display: flex; flex-direction: column; gap: 12px; }
+        select { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #b2cbb3; background: linear-gradient(#ffffff, #f1f8f2); font-size: 14px; outline: none; }
+        .check-container { display: flex; align-items: center; gap: 8px; font-size: 14px; color: #2e7d32; font-weight: 600; }
+        .check-container input { transform: scale(1.15); }
+        .total-box { font-size: 22px; font-weight: bold; color: #2e7d32; text-align: right; text-shadow: 0 1px 0 #fff; }
+        textarea.tz-output { width: 100%; height: 65px; background: rgba(255,255,255,0.8); border: 1px solid #c2dcc5; border-radius: 6px; padding: 8px; font-size: 12.5px; color: #444; resize: none; outline: none; }
+
+        /* --- СТРУКТУРИРОВАННАЯ СЕТКА ПОРТФОЛИО --- */
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(115px, 1fr));
+            gap: 12px;
+            margin-bottom: 15px;
+        }
+        .gallery-item { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+        .gallery-cell {
+            width: 100%; aspect-ratio: 1; background: linear-gradient(135deg, #ffffff, #f0f7f2); border: 3px solid white; border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.05); display: flex; align-items: center; justify-content: center; font-size: 26px; transition: all 0.2s ease; position: relative; overflow: hidden;
+        }
+        .gallery-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 6px;
+            display: block;
+        }
+        .gallery-cell:hover { transform: scale(1.06) translateY(-2px); box-shadow: 0 8px 16px rgba(46,125,50,0.18); border-color: #e8f5e9; }
+        .gallery-label {
+            font-size: 10px; font-weight: 700; color: #2e7d32; text-align: center; background: rgba(240,250,242,0.8); padding: 2px 4px; border-radius: 6px;
+            border: 1px solid rgba(76,175,80,0.15); width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; box-shadow: inset 0 1px 0 white;
+        }
+
+        /* --- ЗЕЛЕНАЯ ГЛЯНЦЕВАЯ КНОПКА ТЕХ ЛЕТ --- */
+        .water-drop-btn {
+            display: inline-flex; align-items: center; justify-content: center; padding: 12px 30px; font-size: 15px; font-weight: bold; color: white;
+            background: linear-gradient(to bottom, #a5d6a7 0%, #4caf50 50%, #2e7d32 100%); border: 1px solid #1b5e20; border-radius: 30px;
+            box-shadow: 0 5px 15px rgba(76,175,80,0.4), inset 0 2px 3px rgba(255,255,255,0.6); position: relative; overflow: hidden; gap: 8px; transition: all 0.2s ease; text-decoration: none;
+        }
+        .water-drop-btn::before { content: ''; position: absolute; top: 2px; left: 10%; width: 80%; height: 40%; background: linear-gradient(to bottom, rgba(255,255,255,0.55), transparent); border-radius: 20px; }
+        .water-drop-btn:hover:not(:disabled) { transform: translateY(-2px); filter: brightness(1.04); }
+        .water-drop-btn:disabled { background: linear-gradient(#bdc3c7, #95a5a6); border-color: #7f8c8d; box-shadow: none; opacity: 0.5; }
+
+        /* --- КРАСИВОЕ МОДАЛЬНОЕ ОКНО (DREAM OS LIGHTBOX) --- */
+        .lightbox-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(10, 30, 15, 0.4);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+            padding: 20px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        .lightbox-overlay.active {
+            display: flex;
+            opacity: 1;
+        }
+        .lightbox-window {
+            background: rgba(235, 248, 240, 0.85);
+            backdrop-filter: blur(20px) saturate(140%);
+            -webkit-backdrop-filter: blur(20px) saturate(140%);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            border-radius: 14px;
+            box-shadow: 0 30px 70px rgba(5, 30, 10, 0.5), inset 0 1px 0 rgba(255,255,255,0.9);
+            width: auto;
+            max-width: 90vw;
+            max-height: 85vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            transform: scale(0.9);
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.15);
+        }
+        .lightbox-overlay.active .lightbox-window {
+            transform: scale(1);
+        }
+        .lightbox-content {
+            padding: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: rgba(255,255,255,0.3);
+            overflow: hidden;
+        }
+        .lightbox-img {
+            max-width: 100%;
+            max-height: 70vh;
+            object-fit: contain;
+            border-radius: 6px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            border: 2px solid white;
+            transition: opacity 0.1s ease;
+        }
+
+        /* ТЕ САМЫЕ СТИЛИ ДЛЯ СТРЕЛОК НАВИГАЦИИ В МОДАЛКЕ */
+        .lightbox-nav-btn {
+            background: rgba(230, 245, 235, 0.3);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            color: #1b5e20;
+            font-size: 24px;
+            font-weight: bold;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15), inset 0 2px 3px rgba(255,255,255,0.4);
+            transition: all 0.2s ease;
+            z-index: 10001;
+            cursor: pointer;
+        }
+        .lightbox-nav-btn:hover {
+            background: rgba(255, 255, 255, 0.8);
+            transform: scale(1.1);
+            color: #4caf50;
+            border-color: #4caf50;
+        }
+        .lightbox-nav-btn:active {
+            transform: scale(0.95);
+        }
+        .prev-btn { margin-right: 20px; }
+        .next-btn { margin-left: 20px; }
+
+        @media (max-width: 600px) {
+            .lightbox-overlay { flex-wrap: wrap; }
+            .lightbox-window { width: 100%; order: 1; }
+            .lightbox-nav-btn { order: 2; margin: 15px 20px 0; width: 60px; height: 45px; border-radius: 10px; }
+            .prev-btn { margin-right: auto; }
+            .next-btn { margin-left: auto; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="bubbles-layer">
+        <div class="bubble" style="width: 40px; height: 40px; left: 5%; animation-delay: 0s; animation-duration: 13s;"></div>
+        <div class="bubble" style="width: 20px; height: 20px; left: 18%; animation-delay: 3s; animation-duration: 9s;"></div>
+        <div class="bubble" style="width: 30px; height: 30px; left: 32%; animation-delay: 1.5s; animation-duration: 11s;"></div>
+        <div class="bubble" style="width: 55px; height: 55px; left: 48%; animation-delay: 0.5s; animation-duration: 16s;"></div>
+        <div class="bubble" style="width: 15px; height: 15px; left: 60%; animation-delay: 4s; animation-duration: 8s;"></div>
+        <div class="bubble" style="width: 38px; height: 38px; left: 72%; animation-delay: 2.2s; animation-duration: 12s;"></div>
+        <div class="bubble" style="width: 25px; height: 25px; left: 84%; animation-delay: 5s; animation-duration: 10s;"></div>
+        <div class="bubble" style="width: 50px; height: 50px; left: 93%; animation-delay: 1.8s; animation-duration: 15s;"></div>
+    </div>
+
+    <div class="os-window">
+        <div class="os-header">
+            <div class="window-title">🌿 ByPusha.art</div>
+            <div class="window-btns">
+                <div class="win-btn btn-min"></div>
+                <div class="win-btn btn-max"></div>
+                <div class="win-btn btn-close" onclick="alert('БУП')"></div>
+            </div>
+        </div>
+
+        <div class="toolbar">
+            <div class="retro-icon" title="Браузер (Стеклянный Глобус)">🌐</div>
+            <div class="retro-icon" title="Проводник (Объемная Папка)">🌐</div>
+            <div class="retro-icon" title="Студия (Классическая Палитра)" onclick="alert('Я РИСУЮ-РИСУЮ!! (=^-ω-^=) ')">🌐</div>
+            <div class="retro-icon retro-icon-error" title="БУМ" onclick="triggerBSOD('Ой-ёй.. ')">🌐</div>
+            
+            <div style="margin-left: auto;">
+                <div class="sound-widget">
+                    <span id="vol-ico">🔊</span> <span style="font-size: 11px; text-shadow: 0 1px 0 white;">SFX: ON</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="workspace">
+            <div class="sidebar">
+                <div class="avatar-box"></div>
+
+                <div class="profile-card">
+                    <h3>Matya</h3>
+                    <p>Художник: <span>#1 P Y S H A ™</span></p>
+                    <p>Устройство: <span>Mobile (Phone)</span></p>
+                    <p>Формат: <span>Digital Art</span></p>
+                    <p>Контакты: <span>@pushyn2006</span></p>
+                </div>
+
+                <div class="pixel-badge">КОММЫШИ: ОТКРЫТЫ!!</div>
+
+                <div class="pet-widget" onclick="petInteract()">
+                    <div class="pet-bubble" id="pet-msg">Чего уставился? (＃`Д´) </div>
+                    <div class="pet-title">ОС ЕЁ ЗОВУТ БИО (〃^w^〃)</div>
+                    <div class="pet-avatar-container">
+                        <img src="https://cropgif.net/images/1783433733053-91613f6c-3f93-42a0-8549-74d1c450bd52.png" alt="Маскот" class="pet-img">
+                    </div>
+                </div>
+            </div>
+
+            <div class="main-panel">
+                <div class="tab-navigation">
+                    <div class="tab-link active" onclick="changeTab(event, 'home-tab')">HOME</div>
+                    <div class="tab-link" onclick="changeTab(event, 'tos-tab')">T.O.S</div>
+                    <div class="tab-link" onclick="changeTab(event, 'prices-tab')">PRICES & PORTFOLIO</div>
+                </div>
+
+                <div id="home-tab" class="tab-view active">
+                    <div class="banner-view"># PYSHA ㅤഒㅤ</div>
+                    
+                    <div class="glass-box">
+                        <h2>Кто я? </h2>
+                        <p style="font-size:14px; line-height:1.6; color:#111; margin-top:8px;">
+                            ПРИВЕТИК!! Я Пуша, разработчик данного интерфейса. Панель спроектирована для максимального облегчения процесса заказа и автоматического расчета параметров. Навигация интуитивно понятна. :33
+                        </p>
+                    </div>
+
+                    <div class="notebook-box">
+                        <div class="notebook-header"> Текущий статус и объявления</div>
+                        <div class="notebook-text" id="note-display">Слоты открыты! Текущая очередь небольшая, беру в работу быстрые заказы. </div>
+                        <div class="notebook-nav">
+                            <button class="notebook-btn" onclick="turnNote(-1)">◀ Пред.</button>
+                            <button class="notebook-btn" onclick="turnNote(1)">След. ▶</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="tos-tab" class="tab-view">
+                    <div class="glass-box">
+                        <h2>ЛИЦЕНЗИОННОЕ СОГЛАШЕНИЕ (T.O.S) </h2>
+                        <ul style="padding-left:18px; font-size:13.5px; color:#222; line-height:1.8; margin-top:8px;">
+                            <li><b>ПРЕДОПЛАТА:</b> Работа строится по схеме: 70% предоплата до начала рисования, оставшиеся 30% — после утверждения итогового результата.</li>
+                            <li><b>ПРАВКИ:</b> Все основные правки бесплатны на стадии наброска/скетча (до 2 штук).</li>
+                            <li><b>ДЕДЛАЙН:</b> От 3 до 14 дней в зависимости от сложности арта, очереди и все в этом духе..</li>
+                            <li><b>АВТОРСКИЕ ПРАВА:</b> Все коммер. заказы идут для личного некоммерческого использования.</li>
+                            <li><b>ПРИВАТНОСТЬ:</b> Оставляю за собой право публиковать работы в портфолио.</li>
+                        </ul>
+                    </div>
+
+                    <div class="glass-box payment-section">
+                        <h3>СПОСОБЫ ОПЛАТЫ // Payment Methods 💳</h3>
+                        <div class="payment-grid">
+                            <div class="payment-card kaspi-card" onclick="alert('Реквизиты Kaspi Gold:ОБСУЖДАЕТСЯ В ЛС\n\nНомер карты: ОБСУЖДАЕТСЯ В ЛС\nПолучатель: ОБСУЖДАЕТСЯ В ЛС')">
+                                <span class="pay-ico">💳</span>
+                                <div>
+                                    <div class="pay-title">Kaspi Gold</div>
+                                    <div class="pay-subtitle">Прямые переводы для КЗ (₸)</div>
+                                </div>
+                            </div>
+                            <div class="payment-card boosty-card" onclick="window.open('https://boosty.to/aminaqqq')">
+                                <span class="pay-ico">🔥</span>
+                                <div>
+                                    <div class="pay-title">Boosty.to</div>
+                                    <div class="pay-subtitle">Международные платежи ($ / ₽)</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bl-panel">
+                        <h4> BLACKLIST / Что я НЕ рисую:</h4>
+                        <ul>
+                            <li>Категорически не принимаю NSFW / Эротику.</li>
+                            <li>Сложную робототехнику (меха) и детальные автомобили.</li>
+                        </ul>
+                    </div>
+
+                    <div class="glass-box">
+                        <label class="check-container">
+                            <input type="checkbox" id="agree-checkbox" onchange="toggleOrderButton()">
+                            Я полностью прочитал(а) и соглашаюсь с условиями T.O.S.
+                        </label>
+                    </div>
+                </div>
+
+                <div id="prices-tab" class="tab-view">
+                    <div class="glass-box calc-grid">
+                        <h2>Калькулятор Коммышей (в основном для облегчение в счёте)</h2>
+                        
+                        <div class="currency-toggle-box">
+                            <span>Валюта расчёта:</span>
+                            <label class="currency-radio-label">
+                                <input type="radio" name="currency-select" value="kzt" checked onchange="runCalculation()"> ₸ (Тенге)
+                            </label>
+                            <label class="currency-radio-label">
+                                <input type="radio" name="currency-select" value="rub" onchange="runCalculation()"> ₽ (Рубли)
+                            </label>
+                        </div>
+                        
+                        <div>
+                            <span style="font-size: 13px; font-weight: bold; color: #2e7d32; display:block; margin-bottom:5px;">ТИП РАБОТЫ:</span>
+                            <select id="art-style" onchange="updateFormatOptions(); runCalculation();">
+                                <option value="sketch">СКЕТЧ РАСКРАШЕННЫЙ</option>
+                                <option value="render">РЕНДЕР</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <span style="font-size: 13px; font-weight: bold; color: #2e7d32; display:block; margin-bottom:5px;">ФОРМАТ РИСУНКА:</span>
+                            <select id="art-format" onchange="runCalculation()">
+                            </select>
+                        </div>
+
+                        <div style="display:flex; flex-direction:column; gap:8px; margin-top:5px;">
+                            <label class="check-container">
+                                <input type="checkbox" id="two-characters-flag" onchange="runCalculation()">
+                                - Два персонажа (+ полная сумма к базе)
+                            </label>
+                            <label class="check-container">
+                                <input type="checkbox" id="complex-bg-flag" onchange="runCalculation()">
+                                - Сложный проработанный фон (+500 ₸ / пересчёт)
+                            </label>
+                        </div>
+
+                        <div style="background: rgba(230,245,235,0.8); padding: 10px; border-radius: 8px; font-size: 12.5px; color: #1b5e20; border-left: 4px solid #4caf50;">
+                            <b>Условия расчёта:</b> 70% оплачивается как предоплата перед скетчем, а 30% — постоплата по завершении проекта.
+                        </div>
+
+                        <div class="total-box">Итоговая цена: <span id="price-val">1000</span> <span id="currency-sign">₸</span></div>
+                    </div>
+
+                    <div class="glass-box calc-grid">
+                        <span style="font-size: 12px; font-weight: bold; color: #555;">Сгенерированное техническое задание:</span>
+                        <textarea class="tz-output" id="tz-text-area" style="height: 120px;" readonly>Выберите опции калькулятора...</textarea>
+                    </div>
+
+                    <div class="glass-box">
+                        <h2>ПОРТФОЛИО (Примеры работ) </h2>
+                        <p style="font-size: 11px; color: #4f6f52; margin-bottom: 12px;">Нажми на карточку, чтобы открыть превью изображения.</p>
+                        
+                        <h3 class="gallery-section-title">СКЕТЧ\РЕНДЕР</h3>
+                        <div class="gallery-grid">
+                            <div class="gallery-item">
+                                <div class="gallery-cell" onclick="showAeroWindow(this.querySelector('img').src, 'Вуп \\ Буп')">
+                                    <img src="https://cdn.phototourl.com/free/2026-07-07-bafffae2-bcc2-4733-a5b8-1631f99c4c83.jpg" alt="Портрет 1" class="gallery-img">
+                                </div>
+                                <div class="gallery-label">Вуп \\ Буп 1</div>
+                            </div>
+
+                            <div class="gallery-item">
+                                <div class="gallery-cell" onclick="showAeroWindow(this.querySelector('img').src, 'Вуп \\ Буп')">
+                                    <img src="https://cdn.phototourl.com/free/2026-07-07-e00c9727-eff5-4f64-805a-59ebafcf4963.jpg" alt="Портрет 2" class="gallery-img">
+                                </div>
+                                <div class="gallery-label">Вуп \\ Буп 2</div>
+                            </div>
+
+                            <div class="gallery-item">
+                                <div class="gallery-cell" onclick="showAeroWindow(this.querySelector('img').src, 'Вуп \\ Буп')">
+                                    <img src="https://cdn.phototourl.com/free/2026-07-07-0968b0cf-1ee5-4e15-b1c6-3b846e162dd2.jpg" alt="По пояс 1" class="gallery-img">
+                                </div>
+                                <div class="gallery-label">Вуп \\ Буп 3</div>
+                            </div>
+
+                            <div class="gallery-item">
+                                <div class="gallery-cell" onclick="showAeroWindow(this.querySelector('img').src, 'Вуп \\ Буп')">
+                                    <img src="https://videotourl.com/images/1783440300253-ddb08bc9-b93c-45b7-955e-67be2220409a.jpg" alt="По пояс 1" class="gallery-img">
+                                </div>
+                                <div class="gallery-label">Вуп \\ Буп 4</div>
+                            </div>
+
+                            <div class="gallery-item">
+                                <div class="gallery-cell" onclick="showAeroWindow(this.querySelector('img').src, 'Вуп \\ Буп')">
+                                    <img src="https://videotourl.com/images/1783440373557-b911ee7f-d32f-4a46-a140-19cbbc64391d.jpg" alt="Вуп" class="gallery-img">
+                                </div>
+                                <div class="gallery-label">Вуп \\ Буп 5</div>
+                            </div>
+
+                            <div class="gallery-item">
+                                <div class="gallery-cell" onclick="showAeroWindow(this.querySelector('img').src, 'Вуп \\ Буп')">
+                                    <img src="https://videotourl.com/images/1783440426285-3cf31862-9d10-4e1d-92e6-ee95c8fea8bc.jpg" alt="Вуп" class="gallery-img">
+                                </div>
+                                <div class="gallery-label">Вуп \\ Буп 6</div>
+                            </div>
+
+                            <div class="gallery-item">
+                                <div class="gallery-cell" onclick="showAeroWindow(this.querySelector('img').src, 'Вуп \\ Буп')">
+                                    <img src="https://videotourl.com/images/1783440494437-d87e004d-a23f-49a3-bf33-dbd0affdc19b.jpg" alt="Вуп" class="gallery-img">
+                                </div>
+                                <div class="gallery-label">Вуп \\ Буп 7</div>
+                            </div>
+
+                            <div class="gallery-item">
+                                <div class="gallery-cell" onclick="showAeroWindow(this.querySelector('img').src, 'Вуп \\ Буп')">
+                                    <img src="https://videotourl.com/images/1783440547908-cbcee2c1-12e7-41d0-a7eb-a424f889d924.jpg" alt="Вуп" class="gallery-img">
+                                </div>
+                                <div class="gallery-label">Вуп \\ Буп 8</div>
+                            </div>
+
+                            <div class="gallery-item">
+                                <div class="gallery-cell" onclick="showAeroWindow(this.querySelector('img').src, 'Вуп \\ Буп')">
+                                    <img src="https://cdn.phototourl.com/free/2026-07-07-248b8ab4-1b33-4a6e-b8fe-2d1f637eed47.jpg" alt="Вуп" class="gallery-img">
+                                </div>
+                                <div class="gallery-label">Вуп \\ Буп 9</div>
+                            </div>
+
+                            <div class="gallery-item">
+                                <div class="gallery-cell" onclick="showAeroWindow(this.querySelector('img').src, 'Вуп \\ Буп')">
+                                    <img src="https://videotourl.com/images/1783440776924-6b95641d-a3dd-40a8-b78b-523a1f20ab83.jpg" alt="Вуп" class="gallery-img">
+                                </div>
+                                <div class="gallery-label">Вуп \\ Буп 10</div>
+                            </div>
+
+                            <div class="gallery-item">
+                                <div class="gallery-cell" onclick="showAeroWindow(this.querySelector('img').src, 'Вуп \\ Буп')">
+                                    <img src="https://videotourl.com/images/1783440813650-0a12fbbd-b85b-4ae0-99c8-13b6ff7998b8.jpg" alt="Вуп" class="gallery-img">
+                                </div>
+                                <div class="gallery-label">Вуп \\ Буп 11</div>
+                            </div>
+
+                            <div class="gallery-item">
+                                <div class="gallery-cell" onclick="showAeroWindow(this.querySelector('img').src, 'Вуп \\ Буп')">
+                                    <img src="https://videotourl.com/images/1783440833601-2d00d175-e7a1-4484-87d3-47836eff1f5f.jpg" alt="Вуп" class="gallery-img">
+                                </div>
+                                <div class="gallery-label">Вуп \\ Буп 12</div>
+                            </div>
+
+                            <div class="gallery-item">
+                                <div class="gallery-cell" onclick="showAeroWindow(this.querySelector('img').src, 'Вуп \\ Буп')">
+                                    <img src="https://videotourl.com/images/1783440892155-e6fa20d4-b6fc-480e-b60f-f928eb12c333.jpg" alt="Вуп" class="gallery-img">
+                                </div>
+                                <div class="gallery-label">Вуп \\ Буп 13</div>
+                            </div>
+
+                            <div class="gallery-item">
+                                <div class="gallery-cell" onclick="showAeroWindow(this.querySelector('img').src, 'Вуп \\ Буп')">
+                                    <img src="https://videotourl.com/images/1783440985102-1a1e5979-823d-4ac3-ab13-f4c5eed57ac1.jpg" alt="Вуп" class="gallery-img">
+                                </div>
+                                <div class="gallery-label">Вуп \\ Буп 14</div>
+                            </div>
+
+                            <div class="gallery-item">
+                                <div class="gallery-cell" onclick="showAeroWindow(this.querySelector('img').src, 'Вуп \\ Буп')">
+                                    <img src="https://videotourl.com/images/1783441000288-6d9bac76-a6d3-41ce-8ab3-ff8d185bf3f1.jpg" alt="Вуп" class="gallery-img">
+                                </div>
+                                <div class="gallery-label">Вуп \\ Буп 15</div>
+                            </div>
+
+                            <div class="gallery-item">
+                                <div class="gallery-cell" onclick="showAeroWindow(this.querySelector('img').src, 'Вуп \\ Буп')">
+                                    <img src="https://videotourl.com/images/1783441077411-48544076-271d-4a8b-bade-ade6fcac2631.jpg" alt="Вуп" class="gallery-img">
+                                </div>
+                                <div class="gallery-label">Вуп \\ Буп 16</div>
+                            </div>
+
+                            <div class="gallery-item">
+                                <div class="gallery-cell" onclick="showAeroWindow(this.querySelector('img').src, 'Вуп \\ Буп')">
+                                    <img src="https://videotourl.com/images/1783440194921-32097e72-4bb4-4302-bcf3-0d7eb077329d.png" alt="Вуп" class="gallery-img">
+                                </div>
+                                <div class="gallery-label">Вуп \\ Буп 17</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="lightbox-overlay" id="lightbox-overlay" onclick="closeAeroWindow()">
+        <button class="lightbox-nav-btn prev-btn" onclick="changelightboxImage(-1); event.stopPropagation();">◀</button>
+        
+        <div class="lightbox-window" onclick="event.stopPropagation()">
+            <div class="os-header">
+                <div class="window-title" id="lightbox-title">🌿 Просмотр Изображения — Dream OS</div>
+                <div class="window-btns">
+                    <div class="win-btn btn-close" onclick="closeAeroWindow()"></div>
+                </div>
+            </div>
+            <div class="lightbox-content">
+                <img src="" alt="Превью" class="lightbox-img" id="lightbox-img">
+            </div>
+        </div>
+
+        <button class="lightbox-nav-btn next-btn" onclick="changelightboxImage(1); event.stopPropagation();">▶</button>
+    </div>
+
+    <script>
+        const priceList = {
+            kzt: {
+                sketch: { title: 'СКЕТЧ РАСКРАШЕННЫЙ', formats: { head: 1000, half: 2000, full: 5000 } },
+                render: { title: 'РЕНДЕР', formats: { head: 1800, half: 2800, full: 6000 } },
+                bg: 500,
+                sign: '₸'
+            },
+            rub: {
+                sketch: { title: 'СКЕТЧ РАСКРАШЕННЫЙ', formats: { head: 100, half: 300, full: 800 } },
+                render: { title: 'РЕНДЕР', formats: { head: 300, half: 450, full: 1000 } },
+                bg: 200,
+                sign: '₽'
+            }
+        };
+
+        const formatNames = {
+            head: 'ХЕДШОТ / ПОРТРЕТ',
+            half: 'ХАЛФ-БОДИ / ПО ПОЯС',
+            full: 'ФУЛЛ-БОДИ / ПОЛНЫЙ РОСТ'
+        };
+
+        function changeTab(e, id) {
+            document.querySelectorAll('.tab-link').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-view').forEach(v => v.classList.remove('active'));
+            e.target.classList.add('active');
+            document.getElementById(id).classList.add('active');
+        }
+
+        function triggerBSOD() { alert('ЧЕ Ж ТЫ ВЫТВОРЯЕШЬ!!!'); }
+        
+        function petInteract() {
+            const msg = document.getElementById('pet-msg');
+            msg.style.display = 'block';
+            setTimeout(() => { msg.style.display = 'none'; }, 2000);
+        }
+
+        // ПЕРЕМЕННЫЕ ДЛЯ ЛИСТАНИЯ ГАЛЕРЕИ
+        let currentImgIndex = 0;
+        let galleryImagesArray = [];
+
+        function showAeroWindow(imgSrc, labelText) {
+            const overlay = document.getElementById('lightbox-overlay');
+            const img = document.getElementById('lightbox-img');
+            const title = document.getElementById('lightbox-title');
+            
+            // Собираем все картинки
+            const allGalleryElements = document.querySelectorAll('.gallery-grid .gallery-img');
+            galleryImagesArray = Array.from(allGalleryElements).map(el => {
+                return {
+                    src: el.src,
+                    label: el.closest('.gallery-item').querySelector('.gallery-label').textContent
+                };
+            });
+            
+            currentImgIndex = galleryImagesArray.findIndex(item => item.src === imgSrc);
+            
+            img.src = imgSrc;
+            title.textContent = `🌿 Просмотр: ${galleryImagesArray[currentImgIndex].label} — Dream OS`;
+            
+            overlay.style.display = 'flex';
+            setTimeout(() => {
+                overlay.classList.add('active');
+            }, 10);
+        }
+
+        function changelightboxImage(dir) {
+            if (galleryImagesArray.length === 0) return;
+            
+            currentImgIndex = (currentImgIndex + dir + galleryImagesArray.length) % galleryImagesArray.length;
+            
+            const nextData = galleryImagesArray[currentImgIndex];
+            const img = document.getElementById('lightbox-img');
+            const title = document.getElementById('lightbox-title');
+            
+            img.style.opacity = '0.3';
+            setTimeout(() => {
+                img.src = nextData.src;
+                title.textContent = `🌿 Просмотр: ${nextData.label} — Dream OS`;
+                img.style.opacity = '1';
+            }, 100);
+        }
+
+        function closeAeroWindow() {
+            const overlay = document.getElementById('lightbox-overlay');
+            overlay.classList.remove('active');
+            setTimeout(() => {
+                overlay.style.display = 'none';
+            }, 300);
+        }
+
+        function turnNote(dir) {}
+        function toggleOrderButton() {}
+
+        function updateFormatOptions() {
+            const currency = document.querySelector('input[name="currency-select"]:checked').value;
+            const style = document.getElementById('art-style').value;
+            const formatSelect = document.getElementById('art-format');
+            
+            const currentSelected = formatSelect.value;
+            formatSelect.innerHTML = '';
+
+            const formats = priceList[currency][style].formats;
+            const sign = priceList[currency].sign;
+
+            for (let key in formats) {
+                const option = document.createElement('option');
+                option.value = key;
+                option.textContent = `${formatNames[key]} (${formats[key]} ${sign})`;
+                if (key === currentSelected) option.selected = true;
+                formatSelect.appendChild(option);
+            }
+        }
+
+        function runCalculation() {
+            const currency = document.querySelector('input[name="currency-select"]:checked').value;
+            const style = document.getElementById('art-style').value;
+            const format = document.getElementById('art-format').value || 'head';
+            
+            const twoCharacters = document.getElementById('two-characters-flag').checked;
+            const complexBg = document.getElementById('complex-bg-flag').checked;
+
+            const data = priceList[currency];
+            let basePrice = data[style].formats[format];
+            let totalPrice = basePrice;
+
+            if (twoCharacters) totalPrice += basePrice;
+            if (complexBg) totalPrice += data.bg;
+
+            document.getElementById('price-val').textContent = totalPrice;
+            document.getElementById('currency-sign').textContent = data.sign;
+
+            const styleText = data[style].title;
+            const formatText = formatNames[format];
+            const charsText = twoCharacters ? 'Два персонажа (базовый тариф х2)' : 'Один персонаж (стандарт)';
+            const bgText = complexBg ? 'Сложный детализированный фон' : 'Простой / прозрачный фон';
+            
+            const prepayment = Math.round(totalPrice * 0.7);
+            const postpayment = totalPrice - prepayment;
+
+            const tzText = `СИСТЕМНЫЙ ФОРМУЛЯР ТЗ // DREAM OS:\n` +
+                           `----------------------------------\n` +
+                           `• Тип работы: ${styleText}\n` +
+                           `• Формат: ${formatText}\n` +
+                           `• Количество: ${charsText}\n` +
+                           `• Окружение: ${bgText}\n` +
+                           `----------------------------------\n` +
+                           `• ФИНАЛЬНЫЙ БЮДЖЕТ: ${totalPrice} ${data.sign}\n` +
+                           `• ОБЯЗАТЕЛЬНЫЙ ПРЕДОПЛАТА (70%): ${prepayment} ${data.sign}\n` +
+                           `• ОСТАТОК К ОПЛАТЕ (30%): ${postpayment} ${data.sign}`;
+
+            document.getElementById('tz-text-area').value = tzText;
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            updateFormatOptions();
+            runCalculation();
+        });
+
+        // ПУЗЫРЬКИ
+        document.addEventListener('click', function(e) {
+            if(e.target.tagName === 'SELECT' || e.target.tagName === 'OPTION' || e.target.tagName === 'TEXTAREA' || e.target.classList.contains('lightbox-nav-btn')) return;
+            
+            for(let i = 0; i < 3; i++) {
+                const bubble = document.createElement('div');
+                bubble.classList.add('click-bubble');
+                
+                const size = Math.floor(Math.random() * 18) + 10;
+                bubble.style.width = `${size}px`;
+                bubble.style.height = `${size}px`;
+                bubble.style.left = `${e.clientX}px`;
+                bubble.style.top = `${e.clientY}px`;
+                
+                const moveX = (Math.random() - 0.5) * 130;
+                const moveY = -(Math.random() * 80 + 50);
+                bubble.style.setProperty('--mx', `${moveX}px`);
+                bubble.style.setProperty('--my', `${moveY}px`);
+                
+                bubble.style.animationDelay = `${i * 0.08}s`;
+                
+                document.body.appendChild(bubble);
+                setTimeout(() => { bubble.remove(); }, 1300);
+            }
+        });
+    </script>
+</body>
+</html>
